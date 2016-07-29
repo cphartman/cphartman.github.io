@@ -32,6 +32,19 @@
 				text-transform: uppercase;
 				box-shadow: -8px 0px 17px 0 rgba(0,0,0,0.2), -6px 0px 20px 0 rgba(0,0,0,0.19);
 				border-radius: 2px;
+				z-index: 9999;
+			}
+			
+			canvas {
+				position: relative;
+				z-index: 1;
+			}
+			
+			img { 
+				position: absolute;
+				top: 0;
+				left: 0;
+				z-index: -1;
 			}
 
 			@media (max-height: 768px) {
@@ -377,5 +390,6 @@
 	</head>
 	<body>
 		<a href="edit">Go To Editor</a>
+		<img src="images/thumb.png" title="thumbnail" alt="thumbnail">
 	</body>
 </html>
