@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Lakitu's Garden</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+		<script src="../js/three.js"></script>
+		<script src="js/plant.js"></script>
+		<script src="js/head.js"></script>
+		<script src="js/stem.js"></script>
+		<script src="js/leaf.js"></script>
+		<meta charset="utf-8">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+
+			a {
+				box-sizing: border-box;
+				position: fixed;
+				top: 0;
+				right: 0;
+				width: 300px;
+				background-color: #FFF;
+				color: #000;
+				padding: 10px 20px;
+				text-align: center;
+				font-weight: bold;
+				font-family: arial;
+				text-transform: uppercase;
+				box-shadow: -8px 0px 17px 0 rgba(0,0,0,0.2), -6px 0px 20px 0 rgba(0,0,0,0.19);
+				border-radius: 2px;
+			}
+
+			@media (max-height: 768px) {
+				a {
+					top: auto;
+					bottom: 0;
+					width: 100%;
+				}
+			}
+		</style>
+		<script>
+
+			var cubemap_mesh;
+			var cubemap_geometry;
+			var ground_mesh = false;
+			var ground_mesh_behind = false;
+			var ground_length = 32;
+			var ground_position = 0;
+			var bg_mesh = false;
+			var bg_scale = 10;
+			var cloud_mesh = false;
+			var cloud_scale = 4;
+			function InitSkybox() {
+
+				var ground_texture = THREE.ImageUtils.loadTexture("images/floor.gif");
+				ground_texture.magFilter = THREE.NearestFilter;
+				ground_texture.minFilter = THREE.NearestFilter;
+				ground_texture.repeat.set(ground_length/2,2);
+				ground_texture.wrapS = THREE.RepeatWrapping;
+				ground_texture.wrapT = THREE.RepeatWrapping;
+				
+				var geometry = new THREE.PlaneGeometry( ground_length, 4 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide, map: ground_texture} );
+				ground_mesh = new THREE.Mesh( geometry, material );
+				ground_mesh.translateY(-2);
+				ground_mesh.rotation.set(Math.PI/2,0,0);
+				scene.add( ground_mesh );
+
+				ground_mesh_behind = new THREE.Mesh( geometry, material );
+				ground_mesh_behind.translateY(-2);
+				ground_mesh_behind.translateX(ground_length);
+				ground_mesh_behind.rotation.set(Math.PI/2,0,0);
+				scene.add( ground_mesh_behind );
+
+
+				bg_map = THREE.ImageUtils.loadTexture("images/bg1.gif");
+				bg_map.magFilter = THREE.NearestFilter;
+				bg_map.minFilter = THREE.NearestFilter;
+				bg_map.repeat.set(.25,1);
+				RandomizeBG();
+                var bg_material = new THREE.MeshBasicMaterial( { map: bg_map, color: 0xffffff, side: THREE.DoubleSide } );
+				bg_material.transparent = true;
+				bg_material.depthWrite = false;
+				var bg_geometry = new THREE.PlaneGeometry( 2, 1 );
+                bg_mesh = new THREE.Mesh( bg_geometry, bg_material );
+                bg_mesh.position.set(Math.random()*pipe_distance*-1, -2+bg_scale/2, 2);
+                bg_mesh.scale.set(bg_scale, bg_scale, bg_scale);
+                scene.add( bg_mesh );
+
+                cloud_map = THREE.ImageUtils.loadTexture("images/clouds.gif");
+				cloud_map.magFilter = THREE.NearestFilter;
+				cloud_map.minFilter = THREE.NearestFilter;
+				cloud_map.repeat.set(.25,1);
+				RandomizeCloud();
+                var cloud_material = new THREE.MeshBasicMaterial( { map: cloud_map, color: 0xffffff, side: THREE.DoubleSide } );
+				cloud_material.depthWrite = false;
+				var cloud_geometry = new THREE.PlaneGeometry( 2, 1 );
+                cloud_mesh = new THREE.Mesh( cloud_geometry, cloud_material );
+                cloud_mesh.position.set(Math.random()*pipe_distance, Math.random()*6+4, 20);
+                cloud_mesh.scale.set(cloud_scale, cloud_scale, cloud_scale);
+                scene.add( cloud_mesh );
+			}
+
+			var pipe_distance = 10;
+			function InitPipe() {
+				var root = new THREE.Object3D();
+
+				var texture = THREE.ImageUtils.loadTexture("images/pipe.gif");
+				texture.magFilter = THREE.NearestFilter;
+				texture.minFilter = THREE.NearestFilter;
+				texture.repeat.set(2,1);
+				texture.wrapS = THREE.MirroredRepeatWrapping;
+
+				pipe_material = new THREE.MeshBasicMaterial({color: 0xFFFFFF, wireframe: false, side: THREE.DoubleSide,  map: texture});
+				pipe_geometry = new THREE.CylinderGeometry( 1.75, 1.75, 1, 10, 1, true);
+				pipe_mesh = new THREE.Mesh( pipe_geometry, pipe_material );
+				pipe_mesh.translateY(0);
+				pipe_mesh.rotation.set(0,Math.PI/2,0);
+				root.add( pipe_mesh );
+
+				pipe_stalk_geometry = new THREE.CylinderGeometry( 1.5, 1.5, 3, 10, 1, true);
+				pipe_stalk_mesh = new THREE.Mesh( pipe_stalk_geometry, pipe_material );
+				pipe_stalk_mesh.translateY(-1.5);
+				pipe_stalk_mesh.rotation.set(0,Math.PI/2,0);
+				root.add( pipe_stalk_mesh );
+
+				pipe_ground_material = new THREE.MeshBasicMaterial({color: 0x88522a, wireframe: false, side: THREE.DoubleSide});
+				pipe_ground_geometry = new THREE.CircleGeometry( 1.75, 10 );
+				pipe_ground_mesh = new THREE.Mesh( pipe_ground_geometry, pipe_ground_material );
+				pipe_ground_mesh.rotation.set(Math.PI/2,0,Math.PI/5);
+				root.add( pipe_ground_mesh );
+
+				return root;
+			}
+
+			var pipe_front = false;
+			var pipe_back = false;
+			var pipe_distance = 15;
+			var plants = [];
+			function InitPipes() {
+				pipe_front = InitPipe();
+				pipe_back = InitPipe();
+
+				pipe_back.position.x = pipe_distance;
+				scene.add(pipe_front);
+				scene.add(pipe_back);
+			}
+						
+			var lakiuta_sprite = false;
+			var lakiuta_map = false;
+			var lakiuta_theta = 0;
+			var lakiuta_height = 8;
+			function InitLakiuta() {
+				lakiuta_map = THREE.ImageUtils.loadTexture("images/lakiuta.gif");
+				lakiuta_map.magFilter = THREE.NearestFilter;
+				lakiuta_map.minFilter = THREE.NearestFilter;
+				lakiuta_map.repeat.set(.5,.5);
+                var lakiuta_material = new THREE.SpriteMaterial( { map: lakiuta_map, color: 0xffffff, fog: false } );
+
+                lakiuta_sprite = new THREE.Sprite( lakiuta_material );
+                lakiuta_sprite.position.set(0, 8, 2);
+                lakiuta_sprite.scale.set(2, 2, 2);
+                scene.add( lakiuta_sprite );
+
+				seed_map = THREE.ImageUtils.loadTexture("images/lakiuta.gif");
+				seed_map.magFilter = THREE.NearestFilter;
+				seed_map.minFilter = THREE.NearestFilter;
+				seed_map.repeat.set(.5,.5);
+				var seed_material = new THREE.SpriteMaterial( { map: seed_map, color: 0xffffff, fog: false } );
+                seed_sprite = new THREE.Sprite( seed_material );
+                seed_sprite.scale.set(2, 2, 2);
+                seed_sprite.visible = 0;
+                scene.add( seed_sprite );
+			}
+
+			function InitScene() {
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setClearColor( 0x5d93fd );
+				document.body.appendChild( renderer.domElement );
+
+				camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, .1, 1000 );
+				scene = new THREE.Scene();
+
+				var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+				directionalLight.position.set( .5, 1, -1 );
+				scene.add( directionalLight );
+
+				InitSkybox();
+				InitPipes();
+				InitLakiuta();
+
+				
+
+				plant = new Plant();
+				scene.add(plant.root);
+				plant.age = 0;
+				plant.Update();
+				plant.RandomizeGeneration();
+				plant.Reset();
+				
+				camera.position.set(0,8,-10);
+				camera.lookAt( new THREE.Vector3(0,4,0) );
+
+				window.requestAnimationFrame(RAF);
+			}
+			
+			var scene_state = "drop";
+			function Update(delta) {
+				switch(scene_state) {
+					case "drop":
+						seed_sprite.position.set(lakiuta_sprite.position.x, lakiuta_sprite.position.y, 0);
+						seed_velocity = 0;
+						scene_state = "do_drop";
+						lakiuta_sprite.material.map.offset.set(0,.5);
+
+					case "do_drop":
+						UpdateDrop(delta);
+						break;
+
+					case "grow":
+						scene_state = "do_grow";
+						plant.root.position.x = camera.position.x;
+						plant.age = 0;
+						plant.RandomizeGeneration();
+						plant.Reset();
+					case "do_grow":
+						UpdateGrow(delta);
+						break;
+
+					case "pan":
+						pan_distance = 0;
+						pan_start = camera.position.x;
+						scene_state = "do_pan";
+
+						pipe_back.position.x = pipe_front.position.x;
+						pipe_front.position.x = pan_start-pipe_distance;
+
+					case "do_pan":
+						UpdatePan(delta);
+						break;
+
+					case "behave":
+						wait_timer = 0;
+						scene_state = "do_behave";
+						
+					case "do_behave":
+						UpdateWait(delta, 2000, "pan");
+						break;
+
+					case "grab":
+						wait_timer = 0;
+						scene_state = "do_grab";
+						lakiuta_sprite.material.map.offset.set(.5,.5);
+
+					case "do_grab":
+						UpdateWait(delta, 500, "drop");
+						break;
+				}
+
+				plant.Update();
+				UpdateLakiutaHeight(delta);
+				UpdateBG();
+			}
+
+			var lakitu_theta = 0;
+			function UpdateLakiutaHeight(delta) {
+				lakitu_theta += delta*.005;
+				lakiuta_sprite.position.y = lakiuta_height + Math.sin(lakitu_theta)*.1;
+			}
+
+			function UpdateBG() {
+				var x = camera.position.x;
+				if( x < ground_mesh.position.x ) {
+					ground_position -= (ground_length/2);
+					ground_mesh_behind.position.x = ground_mesh.position.x; 
+					ground_mesh.position.x -= (ground_length/2);
+				}
+
+				if( bg_mesh.position.x-pipe_distance-bg_scale/2 > x ) {
+					bg_mesh.position.x = x-pipe_distance-bg_scale/2-Math.random()*pipe_distance;
+					RandomizeBG();
+				}
+
+				if( cloud_mesh.position.x-(pipe_distance*2)-cloud_scale/2 > x ) {
+					cloud_mesh.position.x = x-(pipe_distance*2)-cloud_scale/2-Math.random()*pipe_distance;
+					RandomizeCloud();
+				}
+			}
+
+			function RandomizeBG() {
+				var offset = Math.floor(Math.random()*4)*.25;
+				bg_map.offset.set(offset,0);
+			}
+
+			function RandomizeCloud() {
+				var offset = Math.floor(Math.random()*4)*.25;
+				cloud_map.offset.set(offset,0);
+			}
+
+			var previous_timestamp = 0;
+			function RAF(timestamp) {
+				if( !previous_timestamp ) {
+					previous_timestamp = timestamp;
+				}
+
+				var timestamp_delta = timestamp-previous_timestamp;
+				Update(timestamp_delta);
+				Render();
+
+				previous_timestamp = timestamp;
+
+				window.requestAnimationFrame(RAF);
+			}
+
+			var seed_velocity = 0;
+			var drop_init = 1;
+			function UpdateDrop(delta) {
+				seed_velocity += delta*.0003;
+				seed_sprite.position.y -= seed_velocity;
+
+				if( seed_sprite.position.y < lakiuta_sprite.position.y *.75 ) {
+					lakiuta_sprite.material.map.offset.set(0,.5);
+				}
+
+				if( seed_sprite.position.y < -1 ) {
+					scene_state = "grow";
+				}
+			}
+
+			var pan_distance = 0;
+			var pan_start = 0;
+			function UpdatePan(delta) {
+				plant.Behave(delta);
+				var pan_delta = delta*.005;
+				pan_distance += pan_delta;
+
+				if( pan_distance >= pipe_distance )  {
+					pan_distance = pipe_distance;
+					scene_state = "grab";
+				}
+
+				camera.position.x = pan_start - pan_distance;
+				lakiuta_sprite.position.x = camera.position.x;
+			}
+
+			var wait_timer = 0;
+			function UpdateWait(delta, max, next) {
+				plant.Behave(delta);
+				wait_timer += delta;
+				if( wait_timer >= max ) {
+					scene_state = next;
+				}
+			}
+
+			function UpdateGrow(delta) {
+				plant.age += delta/2000;
+				if( plant.age > 1 ) {
+					plant.age = 1;
+					scene_state = "behave";
+				}
+			}
+
+			function Render() {
+				renderer.render( scene, camera );
+			}
+
+			$(function(){
+				InitScene();
+			});
+
+		</script>
+	</head>
+	<body>
+		<a href="edit">Go To Editor</a>
+	</body>
+</html>

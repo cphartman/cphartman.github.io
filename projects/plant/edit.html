@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Petey Piranha - Editor</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script src="../js/three.js"></script>
+		<script src="js/plant.js"></script>
+		<script src="js/head.js"></script>
+		<script src="js/stem.js"></script>
+		<script src="js/leaf.js"></script>
+		<meta charset="utf-8">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+				font-family: arial;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			#debug {
+				padding: 0 15px 15px 15px;
+				background-color: #FFF;
+				color:#212121;
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: 300px;
+				height: 100%;
+				overflow: auto;
+				box-shadow: -8px 0px 17px 0 rgba(0,0,0,0.2), -6px 0px 20px 0 rgba(0,0,0,0.19);
+			}
+
+			#debug h2 {
+				text-transform: uppercase;
+				font-weight: 200;
+				font-size: 24px;
+				padding: 20px 0 10px;
+				margin: 0;
+			}
+
+			#debug label{
+				display: block;
+				clear: both;
+				font-size: 12px;
+			}
+
+			#debug label button,
+			#debug label input {
+				width: 150px;
+				float: right;
+			}
+
+			a {
+				box-sizing: border-box;
+				bottom: 0;
+				left: 0;
+				width: 100%;
+				display: block;
+				background-color: #FFF;
+				color: #000;
+				padding: 10px 20px;
+				text-align: center;
+				font-weight: bold;
+				font-family: arial;
+				text-transform: uppercase;
+			}
+		</style>
+		<script>
+			var options = {
+				'plant': {
+					'head': {
+						'radius': [.5,1],
+						'lipSize': [.03,.13],
+						'mouthTheta': [0, Math.PI/2],
+						'teethCount': [1, 6],
+						'teethLength': [.5, 1],
+						'teethWidth': [.005, .125],
+					},
+					'stem': {
+						'width': [.3,1],
+						'height': [4,7],
+						'initialVelocityX': [-.2,.2],
+						'initialVelocityZ': [-.2,.2],
+						'gravity': [0,.1],
+						'leaf_count': [4,12],
+						'leaf_age_time': [.1,.6]
+					},
+					'leaf': {
+						'f1': [0,2],
+						'f2': [0,2],
+						'g1': [0,1],
+						'g2': [0,1]
+					}
+				}
+			}
+			
+			var pipe_distance = 10;
+			function InitPipe() {
+				var root = new THREE.Object3D();
+
+				var texture = THREE.ImageUtils.loadTexture("images/pipe.gif");
+				texture.magFilter = THREE.NearestFilter;
+				texture.minFilter = THREE.NearestFilter;
+				texture.repeat.set(2,1);
+				texture.wrapS = THREE.MirroredRepeatWrapping;
+
+				pipe_material = new THREE.MeshBasicMaterial({color: 0xFFFFFF, wireframe: false, side: THREE.DoubleSide,  map: texture});
+				pipe_geometry = new THREE.CylinderGeometry( 1.75, 1.75, 1, 10, 1, true);
+				pipe_mesh = new THREE.Mesh( pipe_geometry, pipe_material );
+				pipe_mesh.translateY(0);
+				pipe_mesh.rotation.set(0,Math.PI/2,0);
+				root.add( pipe_mesh );
+
+				pipe_stalk_geometry = new THREE.CylinderGeometry( 1.5, 1.5, 3, 10, 1, true);
+				pipe_stalk_mesh = new THREE.Mesh( pipe_stalk_geometry, pipe_material );
+				pipe_stalk_mesh.translateY(-1.5);
+				pipe_stalk_mesh.rotation.set(0,Math.PI/2,0);
+				root.add( pipe_stalk_mesh );
+
+				pipe_ground_material = new THREE.MeshBasicMaterial({color: 0x88522a, wireframe: false, side: THREE.DoubleSide});
+				pipe_ground_geometry = new THREE.CircleGeometry( 1.75, 10 );
+				pipe_ground_mesh = new THREE.Mesh( pipe_ground_geometry, pipe_ground_material );
+				pipe_ground_mesh.rotation.set(Math.PI/2,0,Math.PI/5);
+				root.add( pipe_ground_mesh );
+
+				return root;
+			}
+
+			var plant = false;
+			function InitPlants() {
+
+				var pipe = new InitPipe();
+				scene.add(pipe);
+
+				plant = new Plant();
+				scene.add(plant.root);
+
+				plant.age = 1;
+				plant.Update();
+				plant.RandomizeGeneration();
+				plant.Reset();
+				plant.Update();
+			}
+
+			function InitScene() {
+				var debug_width = 250;
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth-debug_width, window.innerHeight );
+				renderer.setClearColor( 0x5d93fd );
+				document.body.appendChild( renderer.domElement );
+
+				camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, .1, 1000 );
+				scene = new THREE.Scene();
+
+				var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+				directionalLight.position.set( .5, 1, -1 );
+				scene.add( directionalLight );
+
+				InitPlants();
+
+				CameraSpin();
+				Render();
+				Grow();
+			}
+
+			function Render() {
+				renderer.render( scene, camera );
+			}
+
+			function RefreshInput( $input ) {
+				var part = $input.data('part');
+				var option = $input.data('option')
+				var value = parseFloat($input.val());
+
+				var refresh = false;
+				if( part == "age" ) {
+					refresh = (plant.age != value);
+					plant.age = value;
+				} else if( part == "leaf" ) {
+					refresh = (plant.stem.leafs[0][option] != value);
+					plant.stem.leafs[0][option] = value;
+				} else {
+					
+					if( option == "leaf_count" || option == "teethCount" ) {
+						value = Math.floor(value);
+					}
+
+					refresh = (plant[part][option] != value);
+					plant[part][option] = value;
+				}
+
+				// Value change, update plant and render
+				if( refresh ) {
+						
+					switch(part) {
+						case "leaf":
+							// Update all other leaves
+							for( var i = 0; i < plant.stem.leafs.length; i++ ) {
+								plant.stem.leafs[i][option] = plant.stem.leafs[0][option];
+							}
+							break;
+
+						case "head":
+							if( option == "mouthTheta" ) {
+								plant.head.mouthTheta_target = value;
+							}
+							plant.head.Reset();
+							break;
+
+						case "stem":
+							if( option == "height" ) {
+								RefreshCameraHeight();
+							}
+
+							if( option == "leaf_count" ) {
+								// Backup leaf variables
+								f1 = plant.stem.leafs[0].f1;
+								f2 = plant.stem.leafs[0].f2;
+								g1 = plant.stem.leafs[0].g1;
+								g2 = plant.stem.leafs[0].g2;
+
+								plant.stem.RandomizeLeafSpawns();
+								plant.stem.Reset();
+
+								// Restore leaf variables
+								for( var i = 0; i < plant.stem.leafs.length; i++ ) {
+									plant.stem.leafs[i].f1 = f1;
+									plant.stem.leafs[i].f2 = f2;
+									plant.stem.leafs[i].g1 = g1;
+									plant.stem.leafs[i].g2 = g2;
+								}
+							}
+							break;
+					}
+					plant.Update();
+					Render();
+				} 
+				
+				
+			}
+
+			var mouseY = 0;
+			var mouseY_prev = 0;
+			var mouseX = 0;
+			var mouseX_prev = 0;
+
+			function SyncInputToPlant() {
+				for( var part in options['plant'] ) {
+					for( var option in options['plant'][part] ) {
+						var selector = 'input[data-part="'+part+'"][data-option="'+option+'"]';
+						var $input = $(selector);
+
+						var value = 0;
+						if( part == "leaf" ) {
+							value = plant.stem.leafs[0][option];
+						} else {
+							value = plant[part][option];	
+						}
+						$input.val(value);
+					}
+				}
+			}
+			
+			$(function(){
+				InitScene();
+
+				$("canvas").mousemove(function(e){
+					mouseY_prev = mouseY;
+					mouseY = e.screenY;
+					mouseX_prev = mouseX;
+					mouseX = e.screenX;
+					if( e.buttons ) {
+						
+						CameraSpin();
+						Render();
+					}
+				});
+
+				// Setup debug menu
+				var options_html = "";
+
+				options_html += '<a href="./">Go to Demo</a>';
+
+				options_html += '<h2>Age</h2><label>&nbsp;<input type="range" data-part="age" min="0" max="1" step=".01" value="1"></label>';
+				for( var part in options['plant'] ) {
+					options_html += '<h2>'+part+'</h2>';
+					for( var option in options['plant'][part] ) {
+						var label = option;
+						var min = options['plant'][part][option][0];
+						var max = options['plant'][part][option][1];
+						var step = (max - min)/100;
+						if( part == "leaf" ) {
+							value = plant.stem.leafs[0][option];
+						} else {
+							value = plant[part][option];
+						}
+
+						options_html += '<label><span>'+label+'</span><input data-option="'+option+'" data-part="'+part+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'"></label>';
+					}
+				} 
+				options_html += '<h2>&nbsp;</h2><label>&nbsp;<button id="randomize">Randomize</button></label>';
+				
+				$("#debug").append(options_html);
+				SyncInputToPlant();
+
+				$("#debug").on("mousemove click", "input", function(){
+					RefreshInput( $(this) );
+				});
+
+				$("#randomize").click(function(){
+					plant.age = 0;
+					plant.RandomizeGeneration();
+					plant.Reset();
+					plant.Update();
+					Render();
+					SyncInputToPlant();
+					Grow();
+				});
+
+				var hack_setup_countdown = 10;
+				var hask_setup_refresh = function(){
+					Render();
+					window.setTimeout(hask_setup_refresh, 100);
+				};
+				hask_setup_refresh();
+			});
+
+			function Grow() {
+				if( plant.age < 1 ) {
+					plant.age += .01;
+
+					window.setTimeout(Grow, 10);
+					plant.Update();
+					Render();
+					$('input[data-part="age"]').val(plant.age);
+				}
+			}
+
+			var lakitu_theta = 0;
+			var camera_theta = Math.PI;
+			var camera_target_y = 8;
+			var camera_y = camera_target_y+1;
+			function CameraSpin() {
+				var window_width = $(window).width();
+				var window_height = $(window).height();
+
+				var x =  (mouseX / window_width) - (window_width/2);
+				var x_prev =  (mouseX_prev / window_width) - (window_width/2);
+
+				var y = (mouseY / window_height) - (window_height/2);
+				var y_prev = (mouseY_prev / window_height) - (window_height/2);
+
+				camera_theta -= (x-x_prev)*4;
+				camera_y += (y-y_prev)*10;
+
+				camera_target_y = $('#debug input[data-option="height"]').val()/2;
+				camera_target_y = options.plant.stem.height[1]/2;
+
+				RefreshCameraHeight();
+				UpdateCamera(camera_theta, camera_y);
+			}
+
+			function RefreshCameraHeight() {
+				//camera_target_y = $('#debug input[data-option="height"]').val()/2;
+				//UpdateCamera(camera_theta, camera_y);
+			}
+
+			function UpdateCamera(theta,y) {
+				var distance = 10;
+				var xpos = Math.sin(theta)*distance;
+				var zpos = Math.cos(theta)*distance;
+				var ypos = y;
+
+				camera.position.set(xpos,ypos,zpos);
+				camera.lookAt( new THREE.Vector3(0, camera_target_y, 0) );
+			}
+
+			function nf(n){
+				if( n < 0 ) {
+					return n.toFixed(3)
+				} else {
+					return "&nbsp;"+n.toFixed(3)
+				}
+			}
+		</script>
+		
+		<div id="debug"></div>
+
+	</head>
+	<body>
+	</body>
+</html>
