@@ -2612,15 +2612,15 @@ class EmulatorJS {
     defaultControllers = {
         0: {
             0: {
-                'value': 'x',
-                'value2': 'BUTTON_2'
+                'value': 's',
+                'value2': 'BUTTON_2' // B
             },
             1: {
-                'value': 's',
-                'value2': 'BUTTON_4'
+                'value': 'a',
+                'value2': 'BUTTON_4' // Y
             },
             2: {
-                'value': 'v',
+                'value': 'shift',
                 'value2': 'SELECT'
             },
             3: {
@@ -2644,12 +2644,12 @@ class EmulatorJS {
                 'value2': 'DPAD_RIGHT'
             },
             8: {
-                'value': 'z',
-                'value2': 'BUTTON_1'
+                'value': 'd',
+                'value2': 'BUTTON_1' // A
             },
             9: {
-                'value': 'a',
-                'value2': 'BUTTON_3'
+                'value': 'w',
+                'value2': 'BUTTON_3' // X
             },
             10: {
                 'value': 'q',

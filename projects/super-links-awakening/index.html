@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>EmulatorJS</title>
+        <title>Super Links Awakening</title>
 
-        <link rel = icon href = docs/favicon.ico sizes = "16x16 32x32 48x48 64x64" type = image/vnd.microsoft.icon>
+        <link rel = icon href ="dog-avatar.png" >
         <meta name = viewport content = "width = device-width, initial-scale = 1">
 
         <style>
@@ -96,6 +96,7 @@
                 const parts = input.files[0].name.split(".")
 
                 const core = await (async (ext) => {
+                    return "gb";
                     if (["fds", "nes", "unif", "unf"].includes(ext))
                         return "nes"
 
