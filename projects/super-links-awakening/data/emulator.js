@@ -3037,7 +3037,7 @@ class EmulatorJS {
                 {"type":"button","text":"L","id":"l","location":"left","left":3,"top":-100,"bold":true,"block":true,"input_value":10},
                 {"type":"button","text":"R","id":"r","location":"right","right":3,"top":-100,"bold":true,"block":true,"input_value":11}
             ];
-            info.push(...speedControlButtons);
+            //info.push(...speedControlButtons);
         } else if ('nes' === this.getControlScheme()) {
             info = [
                 {"type":"button","text":"B","id":"b","location":"right","right":75,"top":70,"bold":true,"input_value":0},
@@ -3283,7 +3283,6 @@ class EmulatorJS {
         
         const leftHandedMode = false;
         const blockCSS = 'height:31px;text-align:center;border:1px solid #ccc;border-radius:5px;line-height:31px;';
-        
         for (let i=0; i<info.length; i++) {
             if (info[i].type !== 'button') continue;
             if (leftHandedMode && ['left', 'right'].includes(info[i].location)) {
