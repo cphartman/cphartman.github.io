@@ -8,6 +8,7 @@
 <body>
     <button onclick="javascript:loadVoices()">Load</button>
     <button onclick="javascript:DoPlay()">Play</button>
+    Autoplay: <input id="autoplay" type="checkbox" value="autoplay">
     <script>
         console.log("Test");
         final_transcript = '';
@@ -30,7 +31,7 @@
         function SetupS2T() {
             recognition = new webkitSpeechRecognition();
             recognition.continuous = true;
-            recognition.interimResults = true;
+            //recognition.interimResults = true;
             recognition.lang = "en-us";
             ignore_onend = false;
 
@@ -71,8 +72,12 @@
                 }
                 if( interim_transcript == '' ) {
                     console.log("S2T Final Transcript: " + final_transcript)
-                    //BirdSpeak(final_transcript);
-                    birdPhrase = final_transcript;
+                    if( window.autoplay.checked ) {
+                        BirdSpeak(final_transcript);
+                    } else {
+                        birdPhrase = final_transcript;
+                    }
+                    final_transcript = '';
                 } else {
                     Log("S2T Interim Transcript: " + interim_transcript)
                 }
