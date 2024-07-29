@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+</head>
+
+<body>
+    <script>
+        console.log("Test");
+        final_transcript = '';
+        recognition = null;
+        SetupS2T();
+        
+
+        function SetupS2T() {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = "en-us";
+            ignore_onend = false;
+
+            recognition.onstart = function () {
+                recognizing = true;
+                console.log("S2T start");
+            };
+
+            recognition.onerror = function (event) {
+                console.log("S2T error:");
+                console.log(event);
+                ignore_onend = true;
+            };
+
+            recognition.onend = function () {
+                recognizing = false;
+                if (ignore_onend) {
+                    return;
+                }
+                console.log("S2T end")
+            };
+
+            recognition.onresult = function (event) {
+                var interim_transcript = '';
+                if (typeof (event.results) == 'undefined') {
+                    recognition.onend = null;
+                    recognition.stop();
+                    upgrade();
+                    console.log("S2T: On results error?");
+                    return;
+                }
+                
+                for (var i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final_transcript += event.results[i][0].transcript;
+                    } else {
+                        interim_transcript += event.results[i][0].transcript;
+                    }
+                }
+                if( interim_transcript == '' ) {
+                    console.log("S2T Final Transcript: " + final_transcript)
+                    BirdSpeak(final_transcript);
+                    final_transcript = '';
+                } else {
+                    console.log("S2T Interim Transcript: " + interim_transcript)
+                }
+            };
+
+            recognition.start();
+        }
+
+
+        function Croak() {
+            utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
+            utterance.volume = 50;
+            utterance.pitch = 100;
+            utterance.rate = 1.25;
+            speechSynthesis.speak(utterance);
+        }
+
+        function BirdSpeak(phrase) {
+            var short_phrase = phrase.split(" ").slice(-3).join(" ");
+            console.log("Phrase: "+short_phrase);
+
+            utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
+            utterance.volume = 50;
+            utterance.pitch = 100;
+            utterance.rate = 1.25;
+            utterance.addEventListener('end', ()=>{
+                Speak(short_phrase);
+            });
+            speechSynthesis.speak(utterance);
+        }
+
+        function Speak(phrase) {
+
+            utterance = new SpeechSynthesisUtterance(phrase);
+            //utterance.voice = window.speechSynthesis.getVoices().find(s=>s.voiceURI="com.apple.voice.compact.en-US.Samantha");
+            utterance.volume = 50;
+            utterance.pitch = 50;
+            utterance.rate = 1;
+            speechSynthesis.speak(utterance);
+        }
+
+
+
+    </script>
+</body>
+
+</html>
