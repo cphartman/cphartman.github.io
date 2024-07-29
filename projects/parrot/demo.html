@@ -81,10 +81,28 @@
 
 
         function Croak() {
-            utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
+            let utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
             utterance.volume = 50;
             utterance.pitch = 100;
             utterance.rate = 1.25;
+        }
+
+        function handleSpeechEvent(e) {
+            Log(JSON.stringify(e));
+        }
+
+        function MakeUtterance(str) {
+            let utterance = new SpeechSynthesisUtterance(str);
+            utterance.volume = 50;
+            utterance.pitch = 100;
+            utterance.rate = 1.25;
+            utterance.voice = voice;
+            utterance.addEventListener('start', handleSpeechEvent);
+            utterance.addEventListener('end', handleSpeechEvent);
+            utterance.addEventListener('error', handleSpeechEvent);
+            utterance.addEventListener('boundary', handleSpeechEvent);
+            utterance.addEventListener('pause', handleSpeechEvent);
+            utterance.addEventListener('resume', handleSpeechEvent);
             speechSynthesis.speak(utterance);
         }
 
@@ -92,9 +110,7 @@
             var short_phrase = phrase.split(" ").slice(-3).join(" ");
             Log("Phrase: "+short_phrase);
 
-            utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
-            utterance.voice = voice;
-            utterance.volume = 50;
+            let utterance = MakeUtterance("Rocccckkk! Rocccckkk!");
             utterance.pitch = 100;
             utterance.rate = 1.25;
             utterance.addEventListener('end', ()=>{
@@ -104,12 +120,7 @@
         }
 
         function Speak(phrase) {
-
-            utterance = new SpeechSynthesisUtterance(phrase);
-            utterance.voice = voice;
-            utterance.volume = 50;
-            utterance.pitch = 50;
-            utterance.rate = 1;
+            utterance = new MakeUtterance(phrase);
             speechSynthesis.speak(utterance);
         }
 
