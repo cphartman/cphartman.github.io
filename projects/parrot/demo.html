@@ -104,7 +104,7 @@
         function Speak(phrase) {
 
             utterance = new SpeechSynthesisUtterance(phrase);
-            //utterance.voice = window.speechSynthesis.getVoices().find(s=>s.voiceURI="com.apple.voice.compact.en-US.Samantha");
+            utterance.voice = window.speechSynthesis.getVoices().find(s=>s.voiceURI="com.apple.voice.compact.en-US.Samantha");
             utterance.volume = 50;
             utterance.pitch = 50;
             utterance.rate = 1;
