@@ -9,8 +9,19 @@
         console.log("Test");
         final_transcript = '';
         recognition = null;
-        SetupS2T();
+        loadVoices();
         
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices()
+
+            if (voices.length > 0) {
+                SetupS2T();
+            }
+
+            console.log('loading voices')
+
+            setTimeout(() => loadVoices, 1000)
+        }
 
         function SetupS2T() {
             recognition = new webkitSpeechRecognition();
