@@ -79,14 +79,6 @@
             recognition.start();
         }
 
-
-        function Croak() {
-            let utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
-            utterance.volume = 50;
-            utterance.pitch = 100;
-            utterance.rate = 1.25;
-        }
-
         function handleSpeechEvent(e) {
             Log(JSON.stringify(e));
         }
@@ -103,7 +95,7 @@
             utterance.addEventListener('boundary', handleSpeechEvent);
             utterance.addEventListener('pause', handleSpeechEvent);
             utterance.addEventListener('resume', handleSpeechEvent);
-            speechSynthesis.speak(utterance);
+            return utterance;
         }
 
         function BirdSpeak(phrase) {
@@ -120,7 +112,7 @@
         }
 
         function Speak(phrase) {
-            utterance = new MakeUtterance(phrase);
+            let utterance = MakeUtterance(phrase);
             speechSynthesis.speak(utterance);
         }
 
