@@ -9,16 +9,18 @@
         console.log("Test");
         final_transcript = '';
         recognition = null;
+        voice = null;
         loadVoices();
         
         function loadVoices() {
-            const voices = speechSynthesis.getVoices()
+            Log('loading voices')
 
+            const voices = speechSynthesis.getVoices()
             if (voices.length > 0) {
+                voice = window.speechSynthesis.getVoices().find(v=>v.lang.toLowerCase()=='en-us');
+                Log("Voice Found: "+voice.voiceURI);
                 SetupS2T();
             }
-
-            console.log('loading voices')
 
             setTimeout(() => loadVoices, 1000)
         }
@@ -54,8 +56,7 @@
                 if (typeof (event.results) == 'undefined') {
                     recognition.onend = null;
                     recognition.stop();
-                    upgrade();
-                    console.log("S2T: On results error?");
+                    Log("S2T: On results error?");
                     return;
                 }
                 
@@ -71,7 +72,7 @@
                     BirdSpeak(final_transcript);
                     final_transcript = '';
                 } else {
-                    console.log("S2T Interim Transcript: " + interim_transcript)
+                    Log("S2T Interim Transcript: " + interim_transcript)
                 }
             };
 
@@ -89,9 +90,10 @@
 
         function BirdSpeak(phrase) {
             var short_phrase = phrase.split(" ").slice(-3).join(" ");
-            console.log("Phrase: "+short_phrase);
+            Log("Phrase: "+short_phrase);
 
             utterance = new SpeechSynthesisUtterance("Rocccckkk! Rocccckkk!");
+            utterance.voice = voice;
             utterance.volume = 50;
             utterance.pitch = 100;
             utterance.rate = 1.25;
@@ -104,13 +106,16 @@
         function Speak(phrase) {
 
             utterance = new SpeechSynthesisUtterance(phrase);
-            utterance.voice = window.speechSynthesis.getVoices().find(s=>s.voiceURI="com.apple.voice.compact.en-US.Samantha");
+            utterance.voice = voice;
             utterance.volume = 50;
             utterance.pitch = 50;
             utterance.rate = 1;
             speechSynthesis.speak(utterance);
         }
 
+        function Log(str) { 
+            document.body.innerHTML = str+"<br>"+document.body.innerHTML
+        }
 
 
     </script>
