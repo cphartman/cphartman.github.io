@@ -5,12 +5,12 @@
 </head>
 
 <body>
+    <button onclick="javascript:loadVoices()">Load</button>
     <script>
         console.log("Test");
         final_transcript = '';
         recognition = null;
         voice = null;
-        loadVoices();
         
         function loadVoices() {
             Log('loading voices')
