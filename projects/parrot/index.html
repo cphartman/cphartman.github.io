@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<htm lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+</head>
+
+<body>
+    <script src="./js/alive.js"></script>
+    <style>
+        .tab.selected {
+            color: #F00;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        #tab-header {
+            top: 15px;
+            width: 100%;
+            position: absolute;
+        }
+
+        .tab {
+            text-align: center;
+            background-origin: padding-box;
+            border: 1px solid #000;
+            width: 30%;
+            display: inline-block;
+        }
+
+        #tabs>div {
+            display: none;
+        }
+
+        #tabs>div.selected {
+            display: block;
+        }
+
+        #tabs {
+            margin-top: 50px;
+        }
+
+    </style>
+    <div id="tab-header">
+        <div class="tab" data-tab="log">Log</div>
+        <div class="tab" data-tab="create">Create Sound</div>
+        <div class="tab" data-tab="alive">Alive</div>
+    </div>
+    <div id="tabs">
+        <div id="alive" class="selected">
+            <button onclick="javascript:DoListen()">Listen</button><br>
+            <img id='live-state' src="./images/live-state-sleep.png">
+        </div>
+
+        <div id="log">
+            <div id="log-output"></div>
+            <button onclick="javascript:loadVoices()">Load</button>
+            <button onclick="javascript:DoPlay()">Play</button>
+        </div>
+
+        <div id="create" >
+            <div class="speecharg">
+                Pitch: <input id="create-pitch" type="range" value="0.5" min="0" max="2" step="0.05">
+              </div>
+              <div class="speecharg">
+                Rate: <input id="create-rate" type="range" value="0" min="-3" max="3" step="0.25">
+              </div>
+              <div class="speecharg">
+                Volume: <input id="create-volume" type="range" value="1" min="0" max="1" step="0.05">
+              </div>
+              <div>
+                Input: <input type="text" id="create-text">
+              </div>
+              <select id="create-voice"></select>
+              <button id="create-play" onClick="javascript:CreatePlay()">Play</button>
+        </div>
+    </div>
+    
+    <script>
+        
+        SetupUI();
+
+        final_transcript = '';
+        recognition = null;
+        voice = null;
+        
+        function loadVoices() {
+            Log('loading voices')
+
+            const voices = speechSynthesis.getVoices()
+            if (voices.length > 0) {
+                voice = window.speechSynthesis.getVoices().find(v=>v.lang.toLowerCase()=='en-us');
+                Log("Voice Found: "+voice.voiceURI);
+                SetupS2T();
+                UpdateCreateVoiceSelect();
+            }
+
+            setTimeout(() => loadVoices, 1000)
+        }
+
+        function SetupS2T() {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = "en-us";
+            ignore_onend = false;
+
+            recognition.onstart = function () {
+                recognizing = true;
+                console.log("S2T start");
+            };
+
+            recognition.onerror = function (event) {
+                console.log("S2T error:");
+                console.log(event);
+                ignore_onend = true;
+            };
+
+            recognition.onend = function () {
+                recognizing = false;
+                if (ignore_onend) {
+                    return;
+                }
+                console.log("S2T end")
+            };
+
+            recognition.onresult = function (event) {
+                var interim_transcript = '';
+                if (typeof (event.results) == 'undefined') {
+                    recognition.onend = null;
+                    recognition.stop();
+                    Log("S2T: On results error?");
+                    return;
+                }
+                
+                for (var i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final_transcript += event.results[i][0].transcript;
+                    } else {
+                        interim_transcript += event.results[i][0].transcript;
+                    }
+                }
+                if( interim_transcript == '' ) {
+                    console.log("S2T Final Transcript: " + final_transcript)
+                    birdPhrase = final_transcript;
+                    BirdSpeak(final_transcript);
+                    final_transcript = '';
+                } else {
+                    Log("S2T Interim Transcript: " + interim_transcript)
+                }
+            };
+
+            recognition.start();
+        }
+
+        function handleSpeechEvent(e) {
+            Log(JSON.stringify(e));
+        }
+
+        function MakeUtterance(str) {
+            let utterance = new SpeechSynthesisUtterance(str);
+            utterance.volume = 50;
+            utterance.pitch = 100;
+            utterance.rate = 1.25;
+            utterance.voice = GetVoiceByUri("com.apple.eloquence.en-US.Shelley");
+            utterance.addEventListener('start', handleSpeechEvent);
+            utterance.addEventListener('end', handleSpeechEvent);
+            utterance.addEventListener('error', handleSpeechEvent);
+            utterance.addEventListener('boundary', handleSpeechEvent);
+            utterance.addEventListener('pause', handleSpeechEvent);
+            utterance.addEventListener('resume', handleSpeechEvent);
+            return utterance;
+        }
+
+        function BirdSpeak(phrase) {
+            speechSynthesis.cancel();
+
+            var short_phrase = phrase.split(" ").slice(-3).join(" ");
+            Log("Phrase: "+short_phrase);
+
+            let utterance = MakeUtterance("Rocccckkk! Rocccckkk!");
+            utterance.pitch = 2;
+            utterance.rate = 1.25;
+            utterance.addEventListener('end', ()=>{
+                Speak(short_phrase);
+            });
+            speechSynthesis.speak(utterance);
+        }
+
+        function Speak(phrase) {
+            let utterance = MakeUtterance(phrase);
+            speechSynthesis.speak(utterance);
+        }
+
+        function Log(str) { 
+            let logOut = document.querySelector("#log-output");
+            if( typeof(str) != "string" ) {
+                logOut.innerHTML = JSON.stringify(str)+"<br>"+logOut.innerHTML;
+            } else {
+                logOut.innerHTML = str+"<br>"+logOut.innerHTML;
+            }
+            console.log(str);
+            
+        }
+
+        let birdPhrase = "";
+        function DoPlay() {
+            BirdSpeak(birdPhrase)
+        }
+
+        function CreatePlay() {
+            let text = document.querySelector("#create-text").value;
+            let voiceUri = document.querySelector("#create-voice").value;
+            let utterance = MakeUtterance(text);
+            utterance.pitch = document.querySelector("#create-pitch").value;
+            utterance.rate = document.querySelector("#create-rate").value;
+            utterance.volume = document.querySelector("#create-volume").value;
+            utterance.voice = speechSynthesis.getVoices().find(v=>v.voiceURI==voiceUri);
+            speechSynthesis.speak(utterance);
+        }
+
+        function SetupUI() {
+            document.addEventListener("click", (event) => {
+                tabButton = event.target.closest(".tab");
+                if (tabButton) {
+                    document.querySelector(".tab.selected")?.classList.remove("selected")
+                    document.querySelector("#tabs>.selected")?.classList.remove("selected")
+
+                    tabButton.classList.add("selected");
+                    document.querySelector("#"+tabButton.getAttribute('data-tab')).classList.add("selected")
+                }
+            });
+        }
+
+        function GetVoiceByUri(uri){
+            return speechSynthesis.getVoices().find(v=>v.voiceURI==uri);
+        }
+
+        function UpdateCreateVoiceSelect() {
+            let voiceSelect = document.querySelector("#create-voice");
+            let voices = speechSynthesis.getVoices();
+            voiceSelect.innerHTML = "";
+            for( voice of voices ) {
+                if( voice.lang.includes("en") ){
+                    let html = `<option value=${voice.voiceURI}>${voice.name} (${voice.lang})</option>`
+                    voiceSelect.innerHTML += html;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
