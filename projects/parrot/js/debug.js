@@ -85,44 +85,36 @@ async function TestGetUserMedia() {
 }
 
 function GetDevicesAndTestMic() {
+  let found = true;
+
   navigator.mediaDevices.enumerateDevices()
     .then(devices => {
+      found = false;
       devices.forEach(device => {
         if (device.kind === 'audiooutput' || device.kind === 'audioinput')  {
           Log(JSON.stringify(device));
-          if( device.label="Parrot" ) {
-            
+          if( device.label=="Parrot" ) {
+            Log("Parrot device found");
+            TestMicWithDevice(device);
+            found = true;
           }
         }
       });
+      if( found == false ) {
+        Log("Parrot not found");
+      }
     })
     .catch(err => {
       Log('Error enumerating devices:', err);
     });
-  /*
-  try {
-                // Request the browser to access the audio input device
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+}
 
-                mediaRecorder.addEventListener('dataavailable', event => {
-                    audioChunks.push(event.data);
-                });
-
-                mediaRecorder.addEventListener('stop', () => {
-                    // Combine all chunks to create a Blob
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    document.getElementById('audioPlayback').src = audioUrl;
-                    audioChunks = [];  // Reset the chunks array for the next recording
-                });
-
-                mediaRecorder.start();
-                document.getElementById('startRecording').disabled = true;
-                document.getElementById('stopRecording').disabled = false;
-            } catch (error) {
-                console.error('Error accessing audio devices:', error);
-            }
-        });
-  */
+async function TestMicWithDevice(device) {
+  const constraints = {
+    audio: { deviceId: { exact: device.deviceId } }
+  };
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.start();
+  mediaRecorder.stop();
 }
