@@ -117,7 +117,23 @@ function DoSquak(phrase) {
     speechSynthesis.cancel();
     Log(`Speak: ${phrase}`);
 
-    let squak = MakeUtterance2("Rock! Rock!");
+    let openingIndex = Math.floor(Math.random()*4);
+    let openingText = "";
+    switch(openingIndex) {
+        case 0:
+            openingText = "";
+            break;
+
+        case 1:
+            openingText = "Rock! Rock!";
+            break;
+
+        case 1:
+            openingText = "Rock!";
+            break;
+    }
+
+    let squak = MakeUtterance2(openingText);
     squak.rate = 1.25;
     squak.addEventListener('end', () => {
         let utterance = MakeUtterance2(phrase);
@@ -131,9 +147,13 @@ function DoSquak(phrase) {
 }
 
 function DoSleep() {
-    let delay = 5000;
-    Log(`Sleep: ${delay / 1000}`);
+    let delay = parseInt(document.querySelector("#alive-sleep-delay").value);
+
+    let futureDate = new Date();
+    futureDate.setSeconds(futureDate.getSeconds() + delay);
+    let timeString = futureDate.toLocaleString().replace(/.*, /,"")
+    Log(`Sleep: ${delay} seconds (${timeString})`);
     document.querySelector("#live-state").src = './images/live-state-sleep.png';
 
-    window.setTimeout(DoListen, delay);
+    window.setTimeout(DoListen, delay*1000);
 }
