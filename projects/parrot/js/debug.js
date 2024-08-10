@@ -16,7 +16,15 @@ function ListDevices() {
 }
 
 function TestMicrophone() {
-  
+  let recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-us";
+  recognition.onstart = function () {
+      recognition.stop();
+  };
+  recognition.start();
+
 }
 
 function TestSpeaker() {
