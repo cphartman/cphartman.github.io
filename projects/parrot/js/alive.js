@@ -117,22 +117,15 @@ function DoSquak(phrase) {
     speechSynthesis.cancel();
     Log(`Speak: ${phrase}`);
 
-    let openingIndex = Math.floor(Math.random()*4);
+    let openingIndex = Math.floor(Math.random()*3);
     let openingText = "";
-    switch(openingIndex) {
-        case 0:
-            openingText = "";
-            break;
-
-        case 1:
-            openingText = "Rock! Rock!";
-            break;
-
-        case 1:
-            openingText = "Rock!";
-            break;
+    if( openingIndex == 0 ) {
+        openingText = "Rock!";
+    } else {
+        openingText = "Rock! Rock!";
     }
 
+    Log(`Opening: ${openingText}`);
     let squak = MakeUtterance2(openingText);
     squak.rate = 1.25;
     squak.addEventListener('end', () => {
