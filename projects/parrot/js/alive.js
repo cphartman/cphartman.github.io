@@ -90,7 +90,13 @@ function DoSpeak() {
     let words = Math.floor(Math.random() * 4) + 2;
     let phrase = wordsHeard.slice(-1 * words).join(" ");
     
-    DoSquak(phrase);
+    Log("dummy audio start");
+    let audioEl = document.querySelector("#debug-test-audio");
+    audioElement.onended = function() {
+        Log("dummy audio end");
+        DoSquak(phrase);
+    }
+    audioEl.play();
 }
 
 function MakeUtterance2(str) {
