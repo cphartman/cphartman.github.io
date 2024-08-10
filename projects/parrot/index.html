@@ -18,10 +18,11 @@
         <div id="debug" class="selected">
             <div id="debug-buttons">
                 <button onclick="javascript:ListDevices()">List Devices</button>
-                <button onclick="javascript:TestSpeaker()">Test Speaker</button>
+                <button onclick="javascript:TestTTS()">Test TTS</button>
                 <button onclick="javascript:TestMicrophone()">Test Mic</button>
+                <button onclick="javascript:TestAudioOutput()">Test Speaker</button>
                 <button onclick="javascript:DoListen()">Run Demo</button>
-                <audio controls>
+                <audio id="debug-test-audio" controls>
                     <source src="test.wav" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
@@ -288,6 +289,10 @@
     
             #tabs {
                 margin-top: 50px;
+            }
+
+            * {
+                box-sizing: border-box;
             }
     
         </style>
