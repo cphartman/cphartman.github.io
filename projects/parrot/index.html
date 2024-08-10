@@ -20,10 +20,13 @@
                 <button onclick="javascript:ListDevices()">List Devices</button>
                 <button onclick="javascript:TestSpeaker()">Test Speaker</button>
                 <button onclick="javascript:TestMicrophone()">Test Mic</button>
+                <button onclick="javascript:DoListen()">Run Demo</button>
                 <audio controls>
                     <source src="test.wav" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
+                <div style="clear:both"></div>
+                <textarea id="log-output"></textarea>
             </div>
         </div>
 
@@ -33,7 +36,7 @@
         </div>
 
         <div id="log">
-            <div id="log-output"></div>
+            <div id="log-output-old"></div>
             <button onclick="javascript:loadVoices()">Load</button>
             <button onclick="javascript:DoPlay()">Play</button>
         </div>
@@ -176,9 +179,9 @@
         function Log(str) { 
             let logOut = document.querySelector("#log-output");
             if( typeof(str) != "string" ) {
-                logOut.innerHTML = JSON.stringify(str)+"<br>"+logOut.innerHTML;
+                logOut.innerHTML = JSON.stringify(str)+"\n"+logOut.innerHTML;
             } else {
-                logOut.innerHTML = str+"<br>"+logOut.innerHTML;
+                logOut.innerHTML = str+"\n"+logOut.innerHTML;
             }
             console.log(str);
             
@@ -239,9 +242,18 @@
         
     </script>
         <style>
-            #debug button {
+            #debug button,
+            #debug audio {
                 width: 150px;
-                height: 150px;
+                height: 50px;
+                float: left;
+                background-color: #CCC;
+                margin: 0 5px;
+            }
+
+            #debug textarea {
+                width: 100%;
+                height: 400px;
             }
             .tab.selected {
                 font-weight: bold;
@@ -261,7 +273,7 @@
                 text-align: center;
                 background-origin: padding-box;
                 border: 1px solid #000;
-                width: 30%;
+                width: 24%;
                 display: inline-block;
                 cursor: pointer;
             }
