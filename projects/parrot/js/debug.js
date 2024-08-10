@@ -69,3 +69,60 @@ function TestAudioOutput() {
   let audioEl = document.querySelector("#debug-test-audio");
   audioEl.play();
 }
+
+async function TestGetUserMedia() {
+  let stream = null;
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    Log(`${stream.id} - active: ${stream.active}`);
+    /* use the stream */
+  } catch (err) {
+    Log("TestGetUserMedia error");
+    Log(err);
+    /* handle the error */
+  }
+}
+
+function GetDevicesAndTestMic() {
+  navigator.mediaDevices.enumerateDevices()
+    .then(devices => {
+      devices.forEach(device => {
+        if (device.kind === 'audiooutput' || device.kind === 'audioinput')  {
+          Log(JSON.stringify(device));
+          if( device.label="Parrot" ) {
+            
+          }
+        }
+      });
+    })
+    .catch(err => {
+      Log('Error enumerating devices:', err);
+    });
+  /*
+  try {
+                // Request the browser to access the audio input device
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.addEventListener('dataavailable', event => {
+                    audioChunks.push(event.data);
+                });
+
+                mediaRecorder.addEventListener('stop', () => {
+                    // Combine all chunks to create a Blob
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    document.getElementById('audioPlayback').src = audioUrl;
+                    audioChunks = [];  // Reset the chunks array for the next recording
+                });
+
+                mediaRecorder.start();
+                document.getElementById('startRecording').disabled = true;
+                document.getElementById('stopRecording').disabled = false;
+            } catch (error) {
+                console.error('Error accessing audio devices:', error);
+            }
+        });
+  */
+}
