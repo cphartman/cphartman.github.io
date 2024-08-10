@@ -90,7 +90,7 @@ function DoSpeak() {
     let words = Math.floor(Math.random() * 4) + 2;
     let phrase = wordsHeard.slice(-1 * words).join(" ");
     
-    
+    /*
     let audioEl = document.querySelector("#debug-test-audio");
     audioEl.onended = function() {
         Log("dummy audio end");
@@ -98,6 +98,9 @@ function DoSpeak() {
     }
     Log("dummy audio start");
     audioEl.play();
+    */
+
+    DoSquak(phrase);
 }
 
 function MakeUtterance2(str) {
