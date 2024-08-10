@@ -67,6 +67,5 @@ function SelectOutput() {
 
 function TestAudioOutput() {
   let audioEl = document.querySelector("#debug-test-audio");
-  audioElement.onended
   audioEl.play();
 }
